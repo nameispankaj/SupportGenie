@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}SupportGenie — Support Ticket Management{% endblock %}
+
+{% block content %}
+<div class="support-workspace">
+    <!-- Dashboard Summary Bar -->
+    <section class="dashboard-strip" aria-label="Support Ticket Statistics">
+        <div class="stat-card" data-filter-status="">
+            <div class="stat-label">Total Tickets</div>
+            <div class="stat-value" id="statTotal">--</div>
+            <div class="stat-meta">dbo.Tickets (IsDraft = 0)</div>
+        </div>
+        <div class="stat-card stat-open" data-filter-status="Open">
+            <div class="stat-label">Open Tickets</div>
+            <div class="stat-value" id="statOpen">--</div>
+            <div class="stat-meta">TicketStatusName = 'Open'</div>
+        </div>
+        <div class="stat-card stat-progress" data-filter-status="In Progress">
+            <div class="stat-label">In Progress</div>
+            <div class="stat-value" id="statInProgress">--</div>
+            <div class="stat-meta">Active investigation</div>
+        </div>
+        <div class="stat-card stat-resolved" data-filter-status="Closed">
+            <div class="stat-label">Resolved / Closed</div>
+            <div class="stat-value" id="statResolved">--</div>
+            <div class="stat-meta">TicketStatus = 2 / Closed</div>
+        </div>
+        <div class="stat-card stat-urgent" data-filter-priority="High">
+            <div class="stat-label">High Priority</div>
+            <div class="stat-value" id="statHighPriority">--</div>
+            <div class="stat-meta">TicketUrgencyName = 'High'</div>
+        </div>
+        <div class="stat-card stat-assigned" id="statAssignedCard">
+            <div class="stat-label">Assigned to Me</div>
+            <div class="stat-value" id="statAssigned">--</div>
+            <div class="stat-meta" id="statAssignedName">{{ default_associate_name }}</div>
+        </div>
+    </section>
+
+    <!-- Search and Filter Controls -->
+    <section class="filter-toolbar" aria-label="Ticket Search and Filters">
+        <div class="search-box-wrap">
+            <input
+                type="search"
+                id="ticketSearchInput"
+                class="search-input"
+                placeholder="Search by Ticket ID, subject, description, or client..."
+                aria-label="Search tickets"
+            >
+        </div>
+        <div class="filter-group">
+            <select id="filterStatus" class="filter-select" aria-label="Filter by Status">
+                <option value="">All Statuses</option>
+            </select>
+            <select id="filterCategory" class="filter-select" aria-label="Filter by Category">
+                <option value="">All Categories (TicketTypeName)</option>
+            </select>
+            <select id="filterPriority" class="filter-select" aria-label="Filter by Priority">
+                <option value="">All Priorities</option>
+            </select>
+            <select id="filterAssociate" class="filter-select" aria-label="Filter by Assigned Associate">
+                <option value="">All Associates (PIC)</option>
+            </select>
+            <button type="button" id="clearFiltersBtn" class="btn btn-secondary">Reset</button>
+            <button type="button" id="refreshTicketsBtn" class="btn btn-outline">Refresh</button>
+        </div>
+    </section>
+
+    <!-- Split Workspace: Ticket List (Left) & Ticket Detail + NLP Analysis (Right) -->
+    <div class="support-split-grid">
+        <!-- Left Pane: Ticket List -->
+        <section class="ticket-list-pane" aria-label="Ticket Queue">
+            <div class="pane-header">
+                <h2 class="pane-title">Support Queue</h2>
+                <span id="ticketCountBadge" class="badge badge-neutral">0 tickets</span>
+            </div>
+
+            <div id="ticketListStateBanner" class="state-banner hidden"></div>
+
+            <div class="ticket-table-wrapper">
+                <table class="ticket-table" id="ticketTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Subject &amp; Client</th>
+                            <th>Category</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Assigned (PIC)</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ticketTableBody">
+                        <tr>
+                            <td colspan="7" class="empty-cell">Loading tickets from SQL Server...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Right Pane: Ticket Details, NLP Analysis, and Actions -->
+        <section class="ticket-detail-pane" id="ticketDetailPane" aria-label="Ticket Details and Analysis">
+            <div id="noTicketSelectedView" class="empty-detail-state">
+                <h3>Select a Support Ticket</h3>
+                <p>Click any ticket from the SQL Server queue on the left to inspect its details, run rule-based NLP classification, review historical matches, or record follow-ups and status changes.</p>
+            </div>
+
+            <div id="ticketDetailContent" class="detail-content hidden">
+                <!-- Ticket Header -->
+                <div class="detail-header">
+                    <div class="detail-header-top">
+                        <span class="ticket-id-chip" id="detailTicketId">#--</span>
+                        <span class="badge" id="detailStatusBadge">--</span>
+                        <span class="badge" id="detailPriorityBadge">--</span>
+                        <span class="badge badge-category" id="detailCategoryBadge">--</span>
+                        <div class="detail-header-actions">
+                            <button type="button" id="analyzeTicketBtn" class="btn btn-primary">
+                                Analyze Ticket (NLP)
+                            </button>
+                            <a id="composeEmailForTicketBtn" href="/email" class="btn btn-outline">
+                                Email Reporter
+                            </a>
+                        </div>
+                    </div>
+                    <h2 class="detail-subject" id="detailSubject">--</h2>
+                    <div class="detail-meta-grid">
+                        <div><strong>Client:</strong> <span id="detailClient">--</span></div>
+                        <div><strong>Project / Module:</strong> <span id="detailModule">--</span></div>
+                        <div><strong>Assigned (PIC):</strong> <span id="detailAssignee">--</span></div>
+                        <div><strong>Reporter:</strong> <span id="detailReporter">--</span></div>
+                        <div><strong>Reported Via:</strong> <span id="detailMethod">--</span></div>
+                        <div><strong>Created (UTC):</strong> <span id="detailCreated">--</span></div>
+                        <div><strong>Updated (UTC):</strong> <span id="detailUpdated">--</span></div>
+                        <div><strong>SLA Policy:</strong> <span id="detailSLA">--</span></div>
+                    </div>
+                </div>
+
+                <!-- Ticket Description & Existing Resolution Remark -->
+                <div class="detail-card">
+                    <h3 class="card-section-title">Ticket Description</h3>
+                    <p id="detailDescription" class="description-box">--</p>
+                    <div id="detailResolutionBox" class="resolution-summary-box hidden">
+                        <strong>Recorded Resolution / Remark (dbo.Tickets.Remark):</strong>
+                        <p id="detailRemarkText"></p>
+                        <small id="detailClosedMeta"></small>
+                    </div>
+                </div>
+
+                <!-- NLP Ticket Analysis Panel -->
+                <div id="nlpAnalysisPanel" class="detail-card nlp-card hidden">
+                    <div class="nlp-card-header">
+                        <div>
+                            <h3 class="card-section-title">Rule-Based NLP Ticket Analysis</h3>
+                            <p class="nlp-subtitle" id="nlpConfidenceExplanation"></p>
+                        </div>
+                        <div class="nlp-badges">
+                            <span class="badge badge-nlp-cat" id="nlpPredictedCategory">--</span>
+                            <span class="badge" id="nlpConfidenceBadge">--</span>
+                        </div>
+                    </div>
+
+                    <div class="nlp-grid">
+                        <div class="nlp-box nlp-hypothesis-box">
+                            <h4>Likely Root Cause <span class="hypothesis-tag">Hypothesis — Verify Before Acting</span></h4>
+                            <p id="nlpRootCause">--</p>
+                        </div>
+                        <div class="nlp-box nlp-resolution-box">
+                            <h4>Recommended Investigation &amp; Possible Resolution</h4>
+                            <ol id="nlpResolutionSteps" class="nlp-list"></ol>
+                        </div>
+                    </div>
+
+                    <div class="nlp-grid">
+                        <div class="nlp-box">
+                            <h4>Matched Rules &amp; Supporting Evidence</h4>
+                            <ul id="nlpEvidenceList" class="nlp-list"></ul>
+                        </div>
+                        <div class="nlp-box nlp-missing-box">
+                            <h4>Missing Information Required for Investigation</h4>
+                            <ul id="nlpMissingList" class="nlp-list"></ul>
+                        </div>
+                    </div>
+
+                    <div class="nlp-historical-section">
+                        <h4>Historical Ticket Assistance (SQL Server Matches)</h4>
+                        <p id="nlpHistoricalSummary" class="muted-note"></p>
+                        <div id="nlpHistoricalList" class="historical-cards"></div>
+                    </div>
+
+                    <div class="nlp-apply-bar">
+                        <span class="muted-note">Review recommendation above. The associate must explicitly choose any action:</span>
+                        <button type="button" id="copyNlpToNoteBtn" class="btn btn-secondary btn-sm">
+                            Copy Analysis to Internal Note Draft
+                        </button>
+                        <button type="button" id="applyPredictedCategoryBtn" class="btn btn-outline btn-sm">
+                            Select Predicted Category in Update Form
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Ticket Update & Resolution Action Form -->
+                <div class="detail-card">
+                    <h3 class="card-section-title">Update Ticket / Record Resolution (dbo.Tickets &amp; dbo.UpdateLogs)</h3>
+                    <form id="updateTicketForm" class="action-form">
+                        <div class="form-row-4">
+                            <div class="form-field">
+                                <label for="updateStatusSelect">Status</label>
+                                <select id="updateStatusSelect" required>
+                                    <option value="Open">Open</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="Closed">Closed</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="updatePicSelect">Assigned Associate (dbo.Pic)</label>
+                                <select id="updatePicSelect">
+                                    <option value="">-- Keep Current --</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="updateCategorySelect">Category (TicketTypeName)</label>
+                                <select id="updateCategorySelect"></select>
+                            </div>
+                            <div class="form-field">
+                                <label for="updatePrioritySelect">Priority (TicketUrgencyName)</label>
+                                <select id="updatePrioritySelect">
+                                    <option value="High">High</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Low">Low</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row-2">
+                            <div class="form-field">
+                                <label for="updateRemarkInput">Resolution / Status Remark (dbo.Tickets.Remark)</label>
+                                <textarea
+                                    id="updateRemarkInput"
+                                    rows="2"
+                                    maxlength="2000"
+                                    placeholder="Enter resolution summary or status remark to persist in dbo.Tickets.Remark..."
+                                ></textarea>
+                            </div>
+                            <div class="form-field form-field-narrow">
+                                <label for="updateHoursInput">Hours Spent (if Closing)</label>
+                                <input
+                                    type="number"
+                                    id="updateHoursInput"
+                                    step="0.25"
+                                    min="0"
+                                    placeholder="e.g. 1.5"
+                                >
+                                <button type="submit" id="saveTicketUpdateBtn" class="btn btn-primary btn-block">
+                                    Save Update to SQL Server
+                                </button>
+                            </div>
+                        </div>
+                        <div id="updateTicketFeedback" class="form-feedback hidden"></div>
+                    </form>
+                </div>
+
+                <!-- Add Internal Follow-up Note or Chat Reply -->
+                <div class="detail-card">
+                    <h3 class="card-section-title">Add Note or Conversation Entry</h3>
+                    <form id="addCommentForm" class="action-form">
+                        <div class="form-row-inline">
+                            <label for="commentTypeSelect">Record Type:</label>
+                            <select id="commentTypeSelect">
+                                <option value="followup">Internal Follow-up Note (dbo.TicketFollowups)</option>
+                                <option value="chat">Ticket Chat Message (dbo.TicketChat)</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <textarea
+                                id="commentTextInput"
+                                rows="3"
+                                maxlength="4000"
+                                required
+                                placeholder="Write an internal investigation note or chat message..."
+                            ></textarea>
+                        </div>
+                        <div class="form-actions-right">
+                            <button type="submit" id="submitCommentBtn" class="btn btn-primary">
+                                Post Entry to SQL Server
+                            </button>
+                        </div>
+                        <div id="addCommentFeedback" class="form-feedback hidden"></div>
+                    </form>
+                </div>
+
+                <!-- Ticket History Tabs -->
+                <div class="detail-card">
+                    <div class="history-tabs" role="tablist">
+                        <button type="button" class="history-tab active" data-tab="followups">
+                            Internal Follow-ups (<span id="countFollowups">0</span>)
+                        </button>
+                        <button type="button" class="history-tab" data-tab="chats">
+                            Ticket Chat (<span id="countChats">0</span>)
+                        </button>
+                        <button type="button" class="history-tab" data-tab="emails">
+                            Email Records (<span id="countEmails">0</span>)
+                        </button>
+                        <button type="button" class="history-tab" data-tab="audits">
+                            Update Audit Logs (<span id="countAudits">0</span>)
+                        </button>
+                    </div>
+
+                    <div id="tabPanelFollowups" class="history-tab-panel"></div>
+                    <div id="tabPanelChats" class="history-tab-panel hidden"></div>
+                    <div id="tabPanelEmails" class="history-tab-panel hidden"></div>
+                    <div id="tabPanelAudits" class="history-tab-panel hidden"></div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/support.js"></script>
+{% endblock %}
