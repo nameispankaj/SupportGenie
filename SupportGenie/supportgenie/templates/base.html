@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SupportGenie — Support Ticket & Email Management{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body data-default-associate-id="{{ default_associate_id }}" data-default-associate-name="{{ default_associate_name }}">
+    <header class="app-header">
+        <div class="brand-area">
+            <div class="brand-icon" aria-hidden="true">SG</div>
+            <div>
+                <h1 class="brand-title">SupportGenie</h1>
+                <span class="brand-subtitle">SQL Server Support Desk &amp; Rule-Based NLP Assistant</span>
+            </div>
+        </div>
+
+        <nav class="main-nav" aria-label="Primary Navigation">
+            <a href="/support" class="nav-link {% if active_page == 'support' %}active{% endif %}">
+                Support Console
+            </a>
+            <a href="/email" class="nav-link {% if active_page == 'email' %}active{% endif %}">
+                Email Console
+            </a>
+            <a href="/docs" target="_blank" rel="noopener" class="nav-link nav-link-external">
+                API Docs
+            </a>
+        </nav>
+
+        <div class="header-status-area">
+            <div class="associate-selector-wrap">
+                <label for="globalAssociateSelect" class="sr-label">Active Associate (dbo.Pic):</label>
+                <select id="globalAssociateSelect" class="header-select" title="Active Support Associate from dbo.Pic">
+                    <option value="{{ default_associate_id }}" data-name="{{ default_associate_name }}">
+                        {{ default_associate_name }}
+                    </option>
+                </select>
+            </div>
+            <div id="dbConnectionBadge" class="status-pill status-checking" title="SQL Server Connectivity Status">
+                <span class="status-dot"></span>
+                <span id="dbConnectionText">Checking DB...</span>
+            </div>
+        </div>
+    </header>
+
+    <div id="globalToastContainer" class="toast-container" aria-live="polite"></div>
+
+    <main class="app-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
