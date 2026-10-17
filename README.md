@@ -63,6 +63,10 @@ requirements.txt
    ```powershell
    uvicorn supportgenie.main:app --reload
    ```
+7. Run web UI:
+   ```powershell
+   streamlit run supportgenie/ui/app.py
+   ```
 
 ## API usage
 
@@ -92,6 +96,11 @@ or
 ## Demo mode and planned integrations
 
 The app starts in **demo mode** by default (`SUPPORTGENIE_DEMO_MODE=true`) and uses synthetic tickets instead of live SQL Server.
+
+UI defaults (optional):
+
+- `SUPPORTGENIE_UI_DEFAULT_TENANT_ID` (default `tenant-acme`)
+- `SUPPORTGENIE_UI_DEFAULT_USER_ID` (default `alice`)
 
 Planned production integrations:
 

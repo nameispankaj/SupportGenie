@@ -5,6 +5,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_name: str = "SupportGenie"
     demo_mode: bool = Field(default=True, alias="SUPPORTGENIE_DEMO_MODE")
+    ui_default_tenant_id: str = Field(default="tenant-acme", alias="SUPPORTGENIE_UI_DEFAULT_TENANT_ID")
+    ui_default_user_id: str = Field(default="alice", alias="SUPPORTGENIE_UI_DEFAULT_USER_ID")
     azure_ai_foundry_endpoint: str | None = Field(default=None, alias="AZURE_AI_FOUNDRY_ENDPOINT")
     azure_ai_foundry_api_key: str | None = Field(default=None, alias="AZURE_AI_FOUNDRY_API_KEY")
     azure_ai_search_endpoint: str | None = Field(default=None, alias="AZURE_AI_SEARCH_ENDPOINT")
