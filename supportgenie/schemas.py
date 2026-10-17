@@ -1,5 +1,7 @@
+from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel, Field, model_validator
+
+from pydantic import BaseModel, Field
 
 
 class IssueCategory(str, Enum):
@@ -13,49 +15,102 @@ class IssueCategory(str, Enum):
     INSUFFICIENT_INFORMATION = "Insufficient Information"
 
 
-class ResolutionPath(str, Enum):
-    L1 = "L1_CAN_RESOLVE"
-    L2 = "L2_INVESTIGATION_REQUIRED"
-    BUG_OR_PBI = "PREPARE_BUG_OR_PBI_FOR_REVIEW"
+class HandlingLevel(str, Enum):
+    L1 = "L1 Support"
+    L2 = "L2 Support"
+    BUG_OR_PBI = "Bug/PBI"
 
 
-class ConfidenceLevel(str, Enum):
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
+class HealthResponse(BaseModel):
+    status: str
+    mode: str
 
 
-class TicketAnalysisRequest(BaseModel):
-    ticket_id: str | None = Field(default=None, min_length=1)
-    issue_description: str | None = Field(default=None, min_length=3)
-    include_history: bool = Field(default=True)
-
-    @model_validator(mode="after")
-    def validate_source(self) -> "TicketAnalysisRequest":
-        if not self.ticket_id and not self.issue_description:
-            raise ValueError("Provide ticket_id or issue_description.")
-        return self
+class DashboardResponse(BaseModel):
+    total_tickets: int
+    open_tickets: int
+    in_progress_tickets: int
+    closed_tickets: int
+    tickets_by_urgency: dict[str, int]
+    tickets_by_category: dict[str, int]
 
 
-class AnalyzedTicketContext(BaseModel):
-    ticket_id: str | None = None
-    tenant_id: str
-    issue_summary: str
-    module: str | None = None
-    project: str | None = None
+class TicketListItem(BaseModel):
+    ticket_id: str
+    subject: str
     client: str | None = None
+    project: str | None = None
+    module: str | None = None
+    status: str | None = None
+    urgency: str | None = None
+    assigned_support_associate: str | None = None
+    report_date: datetime | None = None
 
 
-class TicketAnalysisResponse(BaseModel):
-    context: AnalyzedTicketContext
-    category: IssueCategory
-    likely_root_cause: str
+class TicketListResponse(BaseModel):
+    page: int
+    page_size: int
+    total_count: int
+    items: list[TicketListItem]
+
+
+class TicketHistoryItem(BaseModel):
+    source: str
+    message: str
+    created_at: datetime | None = None
+    author: str | None = None
+    metadata: dict[str, str] = Field(default_factory=dict)
+
+
+class TicketDetailResponse(BaseModel):
+    ticket_id: str
+    subject: str
+    description: str
+    client: str | None = None
+    project: str | None = None
+    module: str | None = None
+    status: str | None = None
+    urgency: str | None = None
+    assigned_support_associate: str | None = None
+    report_date: datetime | None = None
+    report_method: str | None = None
+
+
+class TicketHistoryResponse(BaseModel):
+    ticket_id: str
+    history: list[TicketHistoryItem]
+
+
+class AnalyzeTicketResponse(BaseModel):
+    ticket_id: str
+    ticket_subject: str
+    ticket_description: str
+    ticket_category: IssueCategory
+    category_confidence: float
+    classification_explanation: str
+    suspected_root_cause: str
     possible_resolution: str
-    verified_evidence: list[str]
-    hypotheses: list[str]
-    confidence: ConfidenceLevel
+    evidence: list[str]
+    unverified_hypotheses: list[str]
     missing_information: list[str]
     clarifying_questions: list[str]
-    recommendation: ResolutionPath
-    related_knowledge: list[str]
-    demo_mode: bool
+    troubleshooting_steps: list[str]
+    handling_level: HandlingLevel
+    escalation_reason: str | None = None
+    suggested_next_action: str
+
+
+class RecordNoteRequest(BaseModel):
+    note: str = Field(min_length=3, max_length=2000)
+
+
+class TicketFilterParams(BaseModel):
+    ticket_id: str | None = None
+    subject: str | None = None
+    client: str | None = None
+    project: str | None = None
+    module: str | None = None
+    status: str | None = None
+    urgency: str | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None

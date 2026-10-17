@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SupportGenie</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>SupportGenie</h1>
+    <p>Phase 1 Support Ticket Analysis</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Dashboard</h2>
+      <div id="dashboard" class="grid"></div>
+      <p id="dashboard-state" class="state"></p>
+    </section>
+
+    <section class="card">
+      <h2>Tickets</h2>
+      <form id="filters" class="filters">
+        <input name="ticket_id" placeholder="Ticket ID" />
+        <input name="subject" placeholder="Subject" />
+        <input name="client" placeholder="Client" />
+        <input name="project" placeholder="Project" />
+        <input name="module" placeholder="Module" />
+        <input name="status" placeholder="Status" />
+        <input name="urgency" placeholder="Urgency" />
+        <button type="submit">Search</button>
+      </form>
+      <p id="tickets-state" class="state"></p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Ticket</th><th>Subject</th><th>Client</th><th>Status</th><th>Urgency</th><th>Report Date</th>
+            </tr>
+          </thead>
+          <tbody id="tickets-body"></tbody>
+        </table>
+      </div>
+      <div class="pager">
+        <button id="prev-page">Prev</button>
+        <span id="page-label"></span>
+        <button id="next-page">Next</button>
+      </div>
+    </section>
+
+    <section class="card" id="ticket-detail-card">
+      <h2>Ticket Detail</h2>
+      <p id="detail-empty" class="state">Select a ticket to view details.</p>
+      <div id="ticket-detail"></div>
+      <h3>History</h3>
+      <ul id="ticket-history"></ul>
+      <div class="actions">
+        <button id="analyze-btn" disabled>Analyze Ticket</button>
+        <button id="copy-analysis-btn" disabled>Copy Analysis</button>
+      </div>
+      <div class="actions">
+        <textarea id="note-text" placeholder="Investigation note"></textarea>
+        <button id="save-note-btn" disabled>Record Note</button>
+      </div>
+      <p id="analysis-state" class="state"></p>
+      <div id="analysis-result"></div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
