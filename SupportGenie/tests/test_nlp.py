@@ -145,7 +145,7 @@ class TestNLPService(unittest.TestCase):
         self.nlp = NLPService()
 
     def test_all_eight_categories_and_ten_seed_tickets(self) -> None:
-        """Verify that every seed ticket in JotDeskBuddy_Test classifies into its exact expected category."""
+        """Verify that every seed ticket in _Test classifies into its exact expected category."""
         covered_categories = set()
         for ticket in SEED_TICKETS:
             analysis = self.nlp.analyze_ticket(ticket, historical_tickets=SEED_TICKETS)

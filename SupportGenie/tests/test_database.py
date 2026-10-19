@@ -31,7 +31,7 @@ class TestDatabaseModule(unittest.TestCase):
         conn_str = cfg.build_odbc_connection_string()
         self.assertIn("DRIVER={ODBC Driver 18 for SQL Server}", conn_str)
         self.assertIn("SERVER=localhost\\SQLEXPRESS", conn_str)
-        self.assertIn("DATABASE=JotDeskBuddy_Test", conn_str)
+        self.assertIn("DATABASE=jotdesk", conn_str)
         self.assertIn("Trusted_Connection=yes", conn_str)
         self.assertNotIn("PWD=", conn_str)
 
@@ -39,7 +39,7 @@ class TestDatabaseModule(unittest.TestCase):
         """SQL Server authentication mode should include UID and PWD."""
         cfg = Settings(
             db_server="127.0.0.1",
-            db_name="JotDeskBuddy_Test",
+            db_name="jotdesk",
             db_auth_mode="sql",
             db_user="sa_demo",
             db_password="SuperSecretPassword123!",
@@ -79,18 +79,18 @@ class TestDatabaseModule(unittest.TestCase):
             ("has_tickets_table",),
             ("has_clients_table",),
         ]
-        mock_cursor.fetchone.return_value = ("JotDeskBuddy_Test", 1, 1)
+        mock_cursor.fetchone.return_value = ("jotdesk", 1, 1)
         mock_conn.cursor.return_value = mock_cursor
         mock_pyodbc.connect.return_value = mock_conn
 
-        cfg = Settings(db_server="localhost", db_name="JotDeskBuddy_Test", db_auth_mode="windows")
+        cfg = Settings(db_server="localhost", db_name="jotdesk", db_auth_mode="windows")
         manager = DatabaseManager(settings=cfg)
 
         with patch.object(db_module, "pyodbc", mock_pyodbc):
             status = manager.check_connectivity()
             self.assertTrue(status["connected"])
             self.assertTrue(status["schema_valid"])
-            self.assertEqual(status["database"], "JotDeskBuddy_Test")
+            self.assertEqual(status["database"], "jotdesk")
 
     def test_connection_failure_raises_sanitized_error(self) -> None:
         """Connection errors must raise DatabaseConnectionError without leaking credentials."""
@@ -99,7 +99,7 @@ class TestDatabaseModule(unittest.TestCase):
 
         cfg = Settings(
             db_server="localhost",
-            db_name="JotDeskBuddy_Test",
+            db_name="jotdesk",
             db_auth_mode="sql",
             db_user="sa",
             db_password="SensitivePass123",
