@@ -24,7 +24,7 @@ class TestDatabaseModule(unittest.TestCase):
         """Windows authentication mode should include Trusted_Connection=yes and omit UID/PWD."""
         cfg = Settings(
             db_server="localhost\\SQLEXPRESS",
-            db_name="JotDeskBuddy_Test",
+            db_name="jotdesk",
             db_driver="ODBC Driver 18 for SQL Server",
             db_auth_mode="windows",
         )
