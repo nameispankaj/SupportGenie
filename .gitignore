@@ -1,0 +1,11 @@
+# Environment files
+.env
+SupportGenie/.env
+
+# Python virtual environment
+.venv/
+
+# Python cache and test files
+__pycache__/
+*.py[cod]
+.pytest_cache/

@@ -35,7 +35,7 @@ class Settings:
 
     # SQL Server Database settings
     db_server: str = os.getenv("DB_SERVER", "localhost")
-    db_name: str = os.getenv("DB_NAME", "JotDeskBuddy_Test")
+    db_name: str = os.getenv("DB_NAME", "jotdesk")
     db_schema: str = os.getenv("DB_SCHEMA", "dbo")
     db_driver: str = os.getenv("DB_DRIVER", "ODBC Driver 18 for SQL Server")
     db_auth_mode: str = os.getenv("DB_AUTH_MODE", "windows").strip().lower()
@@ -102,7 +102,7 @@ def get_settings() -> Settings:
         default_associate_id=int(os.getenv("DEFAULT_ASSOCIATE_ID", "1")),
         default_associate_name=os.getenv("DEFAULT_ASSOCIATE_NAME", "Demo L1 Associate"),
         db_server=os.getenv("DB_SERVER", "localhost"),
-        db_name=os.getenv("DB_NAME", "JotDeskBuddy_Test"),
+        db_name=os.getenv("DB_NAME", "jotdesk"),
         db_schema=os.getenv("DB_SCHEMA", "dbo"),
         db_driver=os.getenv("DB_DRIVER", "ODBC Driver 18 for SQL Server"),
         db_auth_mode=os.getenv("DB_AUTH_MODE", "windows").strip().lower(),
